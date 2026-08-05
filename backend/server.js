@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import pool from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js"; // <-- UNCOMMENTED
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -17,10 +17,24 @@ pool.query("SELECT NOW()", (err, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes); // <-- UNCOMMENTED
+app.use("/api/auth", authRoutes);
 
 app.get("/api/status", (req, res) => {
   res.json({ message: "Nayi Disha API is running smoothly!" });
+});
+
+// rev: keep-awake ping for uptimerobot (prevents render sleep and keeps aiven db pool warm)
+app.get("/keep-awake", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.status(200).send("Render and Aiven PostgreSQL are both awake!");
+  } catch (err) {
+    console.error(
+      "Database connection dropped, but ping caught it:",
+      err.message,
+    );
+    res.status(500).send("Database sleeping.");
+  }
 });
 
 const PORT = process.env.PORT || 4000;

@@ -8,8 +8,9 @@ const { Pool } = pg;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false, // This will now successfully bypass the cert error
+    rejectUnauthorized: false,
   },
+  idleTimeoutMillis: 0,
 });
 
 pool.on("connect", () => {

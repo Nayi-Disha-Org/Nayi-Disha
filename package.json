@@ -9,5 +9,11 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+<<<<<<< HEAD
+=======
+  },
+  "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1"
+>>>>>>> f9152bc (Save local UI progress before syncing with remote)
   }
 }

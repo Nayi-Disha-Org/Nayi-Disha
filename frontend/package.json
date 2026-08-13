@@ -11,6 +11,7 @@
   "dependencies": {
     "axios": "^1.19.0",
     "react": "^18.2.0",
+<<<<<<< HEAD
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
@@ -19,5 +20,16 @@
     "postcss": "^8.5.25",
     "tailwindcss": "^3.4.19",
     "vite": "^8.2.0"
+=======
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.18.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.0"
+>>>>>>> f9152bc (Save local UI progress before syncing with remote)
   }
 }

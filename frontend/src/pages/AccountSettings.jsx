@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; // Import your AuthContext
 
 export default function AccountSettings() {
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || 'parent';
 
-  const [fullName, setFullName] = useState('Vignesh S Suvarna');
-  const [email, setEmail] = useState(`${role}@nayidisha.org`);
+  // 1. Pull the actual logged-in user from context
+  const { user } = useContext(AuthContext);
+
+  // 2. Set initial states to empty strings
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [notifications, setNotifications] = useState({
     emailAlerts: true,
     wearableVibe: true,
@@ -14,8 +19,21 @@ export default function AccountSettings() {
   });
   const [saved, setSaved] = useState(false);
 
+  // 3. Update the fields dynamically once the user data loads
+  useEffect(() => {
+    if (user) {
+      // Use user.full_name (or whatever your db column is named)
+      setFullName(user.full_name || user.name || '');
+      setEmail(user.email || `${role}@nayidisha.org`);
+    }
+  }, [user, role]);
+
   const handleSave = (e) => {
     e.preventDefault();
+    
+    // NOTE: In the future, you will put your axios.put() request here
+    // to save these settings to your PostgreSQL database!
+    
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -110,7 +128,7 @@ export default function AccountSettings() {
 
           <button 
             type="submit" 
-            className="px-8 py-4 bg-[#0b132b] text-white font-bold rounded-2xl shadow-lg hover:bg-slate-800 transition"
+            className="px-8 py-4 bg-[#0b132b] text-white font-bold rounded-2xl shadow-lg hover:bg-slate-800 transition active:scale-95"
           >
             Save Changes
           </button>

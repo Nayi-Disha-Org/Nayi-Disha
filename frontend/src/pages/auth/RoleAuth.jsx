@@ -1,82 +1,93 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { AuthContext } from '../../context/AuthContext'; 
+import React, { useState, useContext } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function RoleAuth() {
   const [searchParams] = useSearchParams();
-  const role = searchParams.get('role') || 'parent';
-  
+  const role = searchParams.get("role") || "parent";
+
   // 🔒 SECURITY FIX: Only allow parents to sign up!
-  const allowSignUp = role === 'parent';
-  
+  const allowSignUp = role === "parent";
+
   // If they aren't a parent, force the mode to 'login' even if the URL says otherwise
-  const initialMode = allowSignUp ? (searchParams.get('mode') || 'login') : 'login';
-  
-  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+  const initialMode = allowSignUp
+    ? searchParams.get("mode") || "login"
+    : "login";
+
+  const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   const navigate = useNavigate();
   const { loginUser } = useContext(AuthContext);
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   // 👀 NEW FEATURE: Show password toggle state
   const [showPassword, setShowPassword] = useState(false);
 
   const roleConfig = {
-    parent: { title: "Parent Portal", btn: "bg-[#ff7a59] hover:bg-orange-600", icon: "🏡" },
-    caretaker: { title: "Caretaker / NGO", btn: "bg-[#3b82f6] hover:bg-blue-600", icon: "🏫" },
-    admin: { title: "Admin Command Center", btn: "bg-[#8b5cf6] hover:bg-purple-600", icon: "⚙️" }
+    parent: {
+      title: "Parent Portal",
+      btn: "bg-[#ff7a59] hover:bg-orange-600",
+      icon: "🏡",
+    },
+    caretaker: {
+      title: "Caretaker / NGO",
+      btn: "bg-[#3b82f6] hover:bg-blue-600",
+      icon: "🏫",
+    },
+    admin: {
+      title: "Admin Command Center",
+      btn: "bg-[#8b5cf6] hover:bg-purple-600",
+      icon: "⚙️",
+    },
   };
 
   const currentRole = roleConfig[role] || roleConfig.parent;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
     setLoading(true);
 
     try {
+      // Inside handleSubmit:
       if (!isLogin && allowSignUp) {
-        // 1. REAL SIGN UP API CALL (Only runs if they are a Parent!)
-        const response = await axios.post('http://localhost:5000/api/auth/register', {
+        const response = await API.post("/auth/register", {
           full_name: fullName,
           email: email,
           password: password,
-          role: role
+          role: role,
         });
 
-        // 🔄 Flip back to Sign In mode
-        setIsLogin(true); 
-        setSuccessMessage('Account created successfully! Please sign in.');
-        setPassword(''); 
-        setShowPassword(false); // Hide password again for safety
-        
+        setIsLogin(true);
+        setSuccessMessage("Account created successfully! Please sign in.");
+        setPassword("");
+        setShowPassword(false);
       } else {
-        // 2. REAL SIGN IN API CALL
-        const response = await axios.post('http://localhost:5000/api/auth/login', {
+        const response = await API.post("/auth/login", {
           email: email,
           password: password,
-          role: role
+          role: role,
         });
 
-        // Save token to localStorage and update context
-        localStorage.setItem('token', response.data.token);
-        if(loginUser) {
-           loginUser(response.data.user);
+        localStorage.setItem("token", response.data.token);
+        if (loginUser) {
+          loginUser(response.data.user, response.data.token);
         }
 
-        // Route to their specific dashboard
         navigate(`/?role=${role}`);
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || 'Server error. Please try again later.');
+      setErrorMessage(
+        err.response?.data?.message || "Server error. Please try again later.",
+      );
     } finally {
       setLoading(false);
     }
@@ -96,7 +107,9 @@ export default function RoleAuth() {
             {currentRole.title}
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            {allowSignUp && !isLogin ? 'Create your account to get started.' : 'Sign in to access your secure workspace.'}
+            {allowSignUp && !isLogin
+              ? "Create your account to get started."
+              : "Sign in to access your secure workspace."}
           </p>
         </div>
 
@@ -113,67 +126,79 @@ export default function RoleAuth() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
           {/* Only show Full Name if it's a login screen AND signups are allowed */}
           {!isLogin && allowSignUp && (
             <div>
-              <label className="block text-xs font-black uppercase text-slate-500 mb-1">Full Name</label>
-              <input 
-                type="text" 
+              <label className="block text-xs font-black uppercase text-slate-500 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
                 required
-                value={fullName} 
-                onChange={(e) => setFullName(e.target.value)} 
-                placeholder="John Doe" 
-                className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="John Doe"
+                className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-black uppercase text-slate-500 mb-1">Email Address</label>
-            <input 
-              type="email" 
+            <label className="block text-xs font-black uppercase text-slate-500 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
               required
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder={`${role}@nayidisha.org`} 
-              className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={`${role}@nayidisha.org`}
+              className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase text-slate-500 mb-1">Password</label>
+            <label className="block text-xs font-black uppercase text-slate-500 mb-1">
+              Password
+            </label>
             {/* 👀 Dynamic type based on checkbox state */}
-            <input 
-              type={showPassword ? "text" : "password"} 
+            <input
+              type={showPassword ? "text" : "password"}
               required
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              placeholder="••••••••" 
-              className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium"
             />
-            
+
             {/* 👀 Clean Checkbox UI */}
             <div className="mt-3 flex items-center gap-2 px-1">
-              <input 
-                type="checkbox" 
-                id="show-password" 
+              <input
+                type="checkbox"
+                id="show-password"
                 checked={showPassword}
                 onChange={() => setShowPassword(!showPassword)}
                 className="w-4 h-4 rounded border-slate-300 text-[#0b132b] focus:ring-[#0b132b] cursor-pointer"
               />
-              <label htmlFor="show-password" className="text-xs font-bold text-slate-500 cursor-pointer select-none hover:text-slate-700 transition">
+              <label
+                htmlFor="show-password"
+                className="text-xs font-bold text-slate-500 cursor-pointer select-none hover:text-slate-700 transition"
+              >
                 Show Password
               </label>
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
-            className={`w-full py-3.5 mt-2 rounded-xl text-white font-bold text-sm shadow-lg transition active:scale-95 ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${currentRole.btn}`}
+            className={`w-full py-3.5 mt-2 rounded-xl text-white font-bold text-sm shadow-lg transition active:scale-95 ${loading ? "opacity-70 cursor-not-allowed" : ""} ${currentRole.btn}`}
           >
-            {loading ? 'Processing...' : (allowSignUp && !isLogin ? 'Create Account →' : 'Sign In Securely →')}
+            {loading
+              ? "Processing..."
+              : allowSignUp && !isLogin
+                ? "Create Account →"
+                : "Sign In Securely →"}
           </button>
         </form>
 
@@ -181,23 +206,26 @@ export default function RoleAuth() {
         {allowSignUp && (
           <div className="mt-6 text-center text-xs font-medium text-slate-500">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button 
+            <button
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
-                setSuccessMessage('');
-                setErrorMessage('');
+                setSuccessMessage("");
+                setErrorMessage("");
                 setShowPassword(false); // Reset password visibility on toggle
-              }} 
+              }}
               className="font-bold text-[#0b132b] hover:underline ml-1"
             >
-              {isLogin ? 'Sign Up' : 'Sign In'}
+              {isLogin ? "Sign Up" : "Sign In"}
             </button>
           </div>
         )}
 
         <div className="mt-6 text-center border-t border-slate-100 pt-4">
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-slate-700 transition">
+          <Link
+            to="/"
+            className="text-xs font-bold text-slate-400 hover:text-slate-700 transition"
+          >
             ← Back to Role Selection
           </Link>
         </div>

@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import pool from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import healthRoutes from "./routes/healthRoutes.js";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ pool.query("SELECT NOW()", (err, res) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/health", healthRoutes);
 
 app.get("/api/status", (req, res) => {
   res.json({ message: "Nayi Disha API is running smoothly!" });

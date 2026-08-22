@@ -1,3 +1,5 @@
+import CounselingBooking from "./pages/features/CounselingBooking";
+import CaseloadCalendar from "./pages/caretaker/CaseloadCalendar";
 import React, { useState, useEffect, useContext } from "react";
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
@@ -266,6 +268,14 @@ function MainApp() {
                       Dedicated hub tracking Unique Disability ID status and suggesting applicable government schemes.
                     </p>
                   </Link>
+
+                  <Link to="/features/counseling" className="bg-white p-8 rounded-3xl shadow-lg border-t-8 border-[#14b8a6] hover:-translate-y-1 transition-transform block">
+                   <div className="text-4xl mb-4">🧑‍⚕️🤝🧑‍🧒</div>
+                    <h3 className="font-black text-xl text-[#0b132b] mb-3">Counseling Desk</h3>
+                    <p className="font-medium text-slate-600 leading-relaxed">
+                      Book a direct 1-on-1 session with a Sama Foundation mentor for specialized guidance.
+                    </p>
+                  </Link>
                 </div>
               </div>
             )}
@@ -294,6 +304,13 @@ function MainApp() {
                   <p className="font-medium text-slate-600 leading-relaxed">
                     One-tap updates ("Finished Physio", "Ate Lunch") sent straight to parents in real-time.
                   </p>
+                </Link>
+                
+                {/* Fixed the link path here! */}
+                <Link to="/caretaker/caseload" className="block bg-white p-8 rounded-3xl shadow-lg border-t-8 border-[#3b82f6] hover:-translate-y-1 transition-transform">
+                  <div className="text-4xl mb-4">📅</div>
+                  <h3 className="font-black text-xl text-[#0b132b] mb-3">Caseload Calendar</h3>
+                  <p className="font-medium text-slate-600 leading-relaxed">Review and manage incoming parent counseling requests and log clinical notes.</p>
                 </Link>
               </div>
             )}
@@ -335,6 +352,7 @@ function MainApp() {
                   <h3 className="font-black text-xl text-[#0b132b] mb-3">NGO Onboarding</h3>
                   <p className="font-medium text-slate-600 leading-relaxed">Generate master credentials, configure rate limits, and initialize isolated database environments.</p>
                 </Link>
+
               </div>
             )}
           </div>
@@ -399,6 +417,10 @@ export default function App() {
           <Route path="/caretaker/morning-handover" element={<MorningHandover />} />
           <Route path="/caretaker/classroom-radar" element={<ClassroomRadar />} />
           <Route path="/caretaker/quick-stamp" element={<QuickStampCast />} />
+          <Route path="/features/counseling" element={<CounselingBooking />} />
+          
+          {/* Fixed the Route path here! */}
+          <Route path="/caretaker/caseload" element={<CaseloadCalendar />} />
         </Routes>
       </Router>
     </AuthProvider>

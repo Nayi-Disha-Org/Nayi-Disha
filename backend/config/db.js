@@ -10,11 +10,10 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-  // 1. Change this from 0 to 10 seconds.
-  // Now Node.js politely closes idle connections BEFORE Aiven forces them closed.
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 2000, // Fails fast if Aiven is unresponsive
-  max: 10, // Matches Aqua Cart's connectionLimit
+  // INCREASE THIS: Keep the connection open for 10 minutes
+  idleTimeoutMillis: 600000,
+  connectionTimeoutMillis: 2000,
+  max: 4,
 });
 
 pool.on("connect", () => {

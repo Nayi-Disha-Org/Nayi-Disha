@@ -17,6 +17,19 @@ pool.query("SELECT NOW()", (err, res) => {
   if (err) console.error("Error connecting to database:", err.stack);
 });
 
+//  THE UNDEFEATABLE FIX: Internal Heartbeat
+// Pings Aiven every 4 minutes so the connection never drops
+setInterval(
+  async () => {
+    try {
+      await pool.query("SELECT 1");
+    } catch (error) {
+      console.warn("Heartbeat missed:", error.message);
+    }
+  },
+  4 * 60 * 1000,
+);
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/health", healthRoutes);

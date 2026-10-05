@@ -308,6 +308,3 @@ The backend includes an optional Aiven power-on request. It is activated only wh
 
 Nayi-Disha is under active development. Some modules and integrations may continue to evolve as the frontend, backend, database schema, and ESP32 hardware are developed together.
 
-## License
-
-A license has not yet been specified for this repository. Add a `LICENSE` file before distributing the project outside the organization.

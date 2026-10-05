@@ -7,15 +7,12 @@ const { Pool } = pg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-  // INCREASE THIS: Keep the connection open for 10 minutes
+  ssl: { rejectUnauthorized: false },
   idleTimeoutMillis: 600000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // INCREASED: Gives Aiven 10 seconds to boot up
+  keepAlive: true, // ADDED: Detects dead connections sooner
   max: 4,
 });
-
 pool.on("connect", () => {
   console.log("Connected to Aiven PostgreSQL Database");
 });

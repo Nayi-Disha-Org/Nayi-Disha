@@ -1,6 +1,9 @@
 import pg from "pg";
 import dotenv from "dotenv";
 
+// 🔥 THE TIMEZONE FIX: Force the Postgres driver to treat all timestamps as UTC
+pg.types.setTypeParser(1114, str => new Date(str + "Z"));
+
 dotenv.config();
 
 const { Pool } = pg;
@@ -18,7 +21,6 @@ pool.on("connect", () => {
 });
 
 pool.on("error", (err) => {
-  // 2. REMOVE process.exit(-1)!
   // Just log the error and let the pool automatically recover.
   console.warn(
     "An idle client experienced an error (Auto-recovering):",

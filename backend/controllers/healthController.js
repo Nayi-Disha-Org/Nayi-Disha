@@ -66,3 +66,36 @@ export const updateSession = async (req, res) => {
     res.status(500).json({ message: "Failed to update session" });
   }
 };
+// Fetch logs for the logged-in user
+export const getAbcLogs = async (req, res) => {
+  const { parent_id } = req.query;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM abc_logs WHERE parent_id = $1 ORDER BY created_at DESC",
+      [parent_id]
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Database Error:", error);
+    res.status(500).json({ message: "Failed to fetch logs" });
+  }
+};
+
+// Save a new log
+export const addAbcLog = async (req, res) => {
+  const { parent_id, antecedent, behavior, consequence } = req.body;
+  if (!parent_id || !antecedent || !behavior || !consequence) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+  
+  try {
+    const newLog = await pool.query(
+      "INSERT INTO abc_logs (parent_id, antecedent, behavior, consequence) VALUES ($1, $2, $3, $4) RETURNING *",
+      [parent_id, antecedent, behavior, consequence]
+    );
+    res.status(201).json(newLog.rows[0]);
+  } catch (error) {
+    console.error("Database Error:", error);
+    res.status(500).json({ message: "Failed to save log" });
+  }
+};

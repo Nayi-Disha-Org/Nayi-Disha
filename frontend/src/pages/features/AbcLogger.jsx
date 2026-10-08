@@ -1,30 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import API from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function AbcLogger() {
-  const [logs, setLogs] = useState([]); // Empty state: no dummy logs
+  const { user } = useContext(AuthContext);
+  const [logs, setLogs] = useState([]);
   const [antecedent, setAntecedent] = useState('');
   const [behavior, setBehavior] = useState('');
   const [consequence, setConsequence] = useState('');
+  const [status, setStatus] = useState('');
+
+  const fetchLogs = async () => {
+    if (!user) return;
+    try {
+      const res = await API.get(`/health/abc-logs?parent_id=${user.id}`);
+      setLogs(res.data);
+    } catch (error) {
+      console.error("Failed to fetch logs", error);
+    }
+  };
 
   useEffect(() => {
-    // TODO: Fetch existing logs from backend database endpoint
-  }, []);
+    fetchLogs();
+  }, [user]);
 
-  const handleAddLog = (e) => {
+  const handleAddLog = async (e) => {
     e.preventDefault();
     if (!antecedent || !behavior || !consequence) return;
-    const newLog = {
-      id: Date.now(),
-      antecedent,
-      behavior,
-      consequence,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setLogs([newLog, ...logs]);
-    setAntecedent('');
-    setBehavior('');
-    setConsequence('');
+    
+    setStatus('Saving to database...');
+    try {
+      const res = await API.post('/health/abc-logs', {
+        parent_id: user.id,
+        antecedent,
+        behavior,
+        consequence
+      });
+      
+      setLogs([res.data, ...logs]); // Add new log to UI instantly
+      setAntecedent('');
+      setBehavior('');
+      setConsequence('');
+      setStatus('✅ Saved successfully!');
+      setTimeout(() => setStatus(''), 3000);
+    } catch (error) {
+      console.error(error);
+      setStatus('❌ Failed to save log. Check connection.');
+    }
   };
 
   return (
@@ -42,7 +65,11 @@ export default function AbcLogger() {
 
         {/* Input Form */}
         <form onSubmit={handleAddLog} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mb-8 space-y-4">
-          <h2 className="text-xl font-black text-[#0b132b] mb-4">📝 Log New Behavior Entry</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-black text-[#0b132b]">📝 Log New Behavior Entry</h2>
+            {status && <span className="text-sm font-bold text-emerald-600">{status}</span>}
+          </div>
+          
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-black uppercase text-slate-500 mb-1">Antecedent (Trigger)</label>
@@ -74,8 +101,10 @@ export default function AbcLogger() {
           ) : (
             logs.map((log) => (
               <div key={log.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
-                <div>
-                  <span className="text-xs font-bold text-orange-500">{log.time}</span>
+                <div className="w-full">
+                  <span className="text-xs font-bold text-orange-500">
+                    {new Date(log.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
                   <div className="grid md:grid-cols-3 gap-4 mt-2 text-sm">
                     <div><strong className="text-slate-400">A:</strong> {log.antecedent}</div>
                     <div><strong className="text-slate-400">B:</strong> {log.behavior}</div>

@@ -1,6 +1,5 @@
 import express from 'express';
-import { bookCounseling, getCounselingSessions, getExperts, updateSession } from '../controllers/healthController.js';
-
+import { bookCounseling, getCounselingSessions, getExperts, updateSession, getAbcLogs, addAbcLog } from '../controllers/healthController.js';
 const router = express.Router();
 
 // Raj's requested GET route for experts
@@ -13,4 +12,7 @@ router.post('/counseling/book', bookCounseling);
 router.get('/counseling', getCounselingSessions);
 router.put('/counseling/:id', updateSession);
 
+// Add these two new routes
+router.get('/abc-logs', getAbcLogs);
+router.post('/abc-logs', addAbcLog);
 export default router;

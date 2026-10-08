@@ -1,21 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import API from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function LowDemandMode() {
+  const { user } = useContext(AuthContext);
   const [isActive, setIsActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // 1. Fetch the user's saved mode status when the page loads
   useEffect(() => {
-    // TODO: Fetch current mode state from backend database / IoT wearable API on mount
-  }, []);
+    if (user?.id) fetchCurrentMode();
+  }, [user]);
 
+  const fetchCurrentMode = async () => {
+    try {
+      const response = await API.get(`/health/passport/${user.id}`);
+      setIsActive(response.data.low_demand_mode || false);
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error("Failed to fetch mode status", error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Send the toggle command to Aiven PostgreSQL
   const handleToggleMode = async () => {
     setLoading(true);
-    // Simulate database / IoT sync delay
-    setTimeout(() => {
-      setIsActive(!isActive);
+    const newStatus = !isActive;
+    
+    try {
+      const response = await API.put(`/health/low-demand/${user.id}`, {
+        isActive: newStatus
+      });
+      setIsActive(response.data.isActive);
+    } catch (error) {
+      console.error("Failed to sync with database", error);
+      alert("Could not sync with the server. Please check your connection.");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -31,31 +57,33 @@ export default function LowDemandMode() {
           </Link>
         </header>
 
-        <div className={`p-8 rounded-3xl shadow-sm border-2 transition-all ${isActive ? 'bg-indigo-900 text-white border-indigo-700' : 'bg-white text-slate-800 border-slate-100'}`}>
+        <div className={`p-10 rounded-3xl shadow-lg border-4 transition-all duration-500 ${isActive ? 'bg-indigo-900 text-white border-indigo-500' : 'bg-white text-slate-800 border-slate-100'}`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <h2 className="text-2xl font-black">
-                {isActive ? "🟢 Low-Demand Mode Active" : "⚪ Low-Demand Mode Standby"}
+              <h2 className="text-3xl font-black mb-2 flex items-center gap-3">
+                {isActive ? "🟢 Active & Shielding" : "⚪ Standby Mode"}
               </h2>
-              <p className={`text-sm mt-2 leading-relaxed ${isActive ? 'text-indigo-200' : 'text-slate-500'}`}>
+              <p className={`text-sm md:text-base leading-relaxed max-w-xl ${isActive ? 'text-indigo-200' : 'text-slate-500'}`}>
                 {isActive 
-                  ? "Non-essential schedule requirements are hidden in database logs. ESP32 wearable set to minimal vibration alerts." 
-                  : "Normal schedule enabled across all connected devices and database records."}
+                  ? "Non-essential schedule requirements are hidden. Your ESP32 wearable has automatically switched to minimal, low-intensity vibration alerts." 
+                  : "Normal sensory schedule enabled. Wearable is functioning with standard tactile alerts across all connected devices."}
               </p>
             </div>
+            
             <button 
               onClick={handleToggleMode}
               disabled={loading}
-              className={`px-6 py-3 rounded-2xl font-bold text-sm shadow-md transition whitespace-nowrap ${
+              className={`px-8 py-4 rounded-2xl font-black text-lg shadow-xl transition-all active:scale-95 whitespace-nowrap ${
                 isActive 
-                  ? 'bg-white text-indigo-950 hover:bg-indigo-50' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ? 'bg-white text-indigo-950 hover:bg-indigo-50 hover:shadow-indigo-500/20' 
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-600/30'
+              } ${loading ? 'opacity-50 cursor-wait' : ''}`}
             >
-              {loading ? "Syncing..." : isActive ? "Deactivate Mode" : "Activate Now"}
+              {loading ? "Syncing to Cloud..." : isActive ? "Deactivate Shield" : "Activate Shield"}
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

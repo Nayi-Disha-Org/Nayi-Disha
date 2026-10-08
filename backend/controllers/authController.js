@@ -127,3 +127,37 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 };
+// --- GET USER PROFILE ---
+export const getProfile = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT full_name, email, email_alerts, wearable_vibe, daily_summary FROM users WHERE id = $1", 
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    res.status(500).json({ message: "Error fetching profile" });
+  }
+};
+
+// --- UPDATE USER PROFILE ---
+export const updateProfile = async (req, res) => {
+  const { id } = req.params;
+  const { full_name, email, email_alerts, wearable_vibe, daily_summary } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE users 
+       SET full_name = $1, email = $2, email_alerts = $3, wearable_vibe = $4, daily_summary = $5 
+       WHERE id = $6 
+       RETURNING full_name, email, email_alerts, wearable_vibe, daily_summary, role`,
+      [full_name, email, email_alerts, wearable_vibe, daily_summary, id]
+    );
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({ message: "Error updating profile" });
+  }
+};

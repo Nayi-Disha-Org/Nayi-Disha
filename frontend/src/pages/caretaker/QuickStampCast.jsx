@@ -1,20 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import API from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function QuickStampCast() {
+  const { user } = useContext(AuthContext);
   const [broadcasts, setBroadcasts] = useState([]);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const handleSendBroadcast = (e) => {
+  // Fetch broadcasts from Aiven PostgreSQL on load
+  useEffect(() => {
+    fetchBroadcasts();
+  }, []);
+
+  const fetchBroadcasts = async () => {
+    try {
+      const res = await API.get('/health/broadcasts');
+      setBroadcasts(res.data);
+    } catch (error) {
+      console.error("Failed to load broadcasts", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save new broadcast to the database
+  const handleSendBroadcast = async (e) => {
     e.preventDefault();
-    if (!message) return;
-    const newBroadcast = {
-      id: Date.now(),
-      text: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setBroadcasts([newBroadcast, ...broadcasts]);
-    setMessage('');
+    if (!message.trim() || !user?.id) return;
+    
+    try {
+      const res = await API.post('/health/broadcasts', {
+        caretaker_id: user.id,
+        message: message.trim()
+      });
+      // Add the new broadcast to the top of the list instantly
+      setBroadcasts([res.data, ...broadcasts]);
+      setMessage('');
+    } catch (error) {
+      console.error("Failed to send broadcast", error);
+      alert("Could not send broadcast. Check your connection.");
+    }
   };
 
   return (
@@ -40,7 +67,7 @@ export default function QuickStampCast() {
               placeholder="e.g., Finished Physio Session successfully" 
               className="flex-1 p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#3b82f6]" 
             />
-            <button type="submit" className="px-6 py-3 bg-[#3b82f6] text-white font-bold rounded-xl shadow-md hover:bg-blue-600 transition">
+            <button type="submit" disabled={!message.trim()} className="px-6 py-3 bg-[#3b82f6] disabled:opacity-50 text-white font-bold rounded-xl shadow-md hover:bg-blue-600 transition">
               Broadcast Cast
             </button>
           </div>
@@ -48,7 +75,12 @@ export default function QuickStampCast() {
 
         <div className="space-y-4">
           <h3 className="text-xl font-black text-[#0b132b]">Broadcast History</h3>
-          {broadcasts.length === 0 ? (
+          
+          {loading ? (
+            <div className="bg-white p-12 rounded-3xl text-center border border-slate-100 animate-pulse text-slate-500 font-bold">
+              Fetching recent broadcasts...
+            </div>
+          ) : broadcasts.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl text-center border border-slate-100">
               <div className="text-4xl mb-3 opacity-40">⚡</div>
               <h4 className="font-bold text-slate-700">No Broadcasts Sent Yet</h4>
@@ -56,9 +88,11 @@ export default function QuickStampCast() {
             </div>
           ) : (
             broadcasts.map((b) => (
-              <div key={b.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-                <span className="font-semibold text-slate-800 text-sm">{b.text}</span>
-                <span className="text-xs text-slate-400 font-bold">{b.time}</span>
+              <div key={b.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center animate-fade-in-up">
+                <span className="font-semibold text-slate-800 text-sm">{b.message}</span>
+                <span className="text-xs text-slate-400 font-bold">
+                  {new Date(b.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </span>
               </div>
             ))
           )}

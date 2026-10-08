@@ -1,15 +1,15 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // Import your AuthContext
+import API from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 
 export default function AccountSettings() {
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || 'parent';
 
-  // 1. Pull the actual logged-in user from context
-  const { user } = useContext(AuthContext);
+  // Pulling loginUser and token so we can update global app state when the name changes!
+  const { user, loginUser, token } = useContext(AuthContext);
 
-  // 2. Set initial states to empty strings
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [notifications, setNotifications] = useState({
@@ -18,25 +18,57 @@ export default function AccountSettings() {
     dailySummary: false,
   });
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // 3. Update the fields dynamically once the user data loads
+  // Fetch real profile data when the page loads
   useEffect(() => {
-    if (user) {
-      // Use user.full_name (or whatever your db column is named)
-      setFullName(user.full_name || user.name || '');
-      setEmail(user.email || `${role}@nayidisha.org`);
-    }
-  }, [user, role]);
+    if (user?.id) fetchProfile();
+  }, [user]);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    
-    // NOTE: In the future, you will put your axios.put() request here
-    // to save these settings to your PostgreSQL database!
-    
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const fetchProfile = async () => {
+    try {
+      const res = await API.get(`/auth/profile/${user.id}`);
+      setFullName(res.data.full_name || '');
+      setEmail(res.data.email || '');
+      setNotifications({
+        emailAlerts: res.data.email_alerts ?? true,
+        wearableVibe: res.data.wearable_vibe ?? true,
+        dailySummary: res.data.daily_summary ?? false,
+      });
+    } catch (error) {
+      console.error("Failed to load profile", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await API.put(`/auth/profile/${user.id}`, {
+        full_name: fullName,
+        email: email,
+        email_alerts: notifications.emailAlerts,
+        wearable_vibe: notifications.wearableVibe,
+        daily_summary: notifications.dailySummary
+      });
+      
+      // Magic step: Update the global AuthContext so the Nav Bar updates instantly!
+      if (loginUser && token) {
+        loginUser({ ...user, full_name: res.data.full_name, email: res.data.email }, token);
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error("Failed to update profile", error);
+      alert("Error saving settings. Please check your connection.");
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center font-bold text-slate-500 animate-pulse">Loading secure preferences...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] p-8 font-sans">
@@ -52,8 +84,8 @@ export default function AccountSettings() {
         </header>
 
         {saved && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm rounded-2xl text-center">
-            Settings updated successfully!
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm rounded-2xl text-center animate-fade-in-up">
+            ✅ Settings updated and synced with server successfully!
           </div>
         )}
 
@@ -67,7 +99,7 @@ export default function AccountSettings() {
                   type="text" 
                   value={fullName} 
                   onChange={(e) => setFullName(e.target.value)} 
-                  className="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:border-slate-800" 
+                  className="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:border-[#0b132b]" 
                 />
               </div>
               <div>
@@ -76,7 +108,7 @@ export default function AccountSettings() {
                   type="email" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  className="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:border-slate-800" 
+                  className="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:border-[#0b132b]" 
                 />
               </div>
             </div>

@@ -57,7 +57,6 @@ export default function RoleAuth() {
     setLoading(true);
 
     try {
-      // Inside handleSubmit:
       if (!isLogin && allowSignUp) {
         const response = await API.post("/auth/register", {
           full_name: fullName,
@@ -161,7 +160,6 @@ export default function RoleAuth() {
             <label className="block text-xs font-black uppercase text-slate-500 mb-1">
               Password
             </label>
-            {/* 👀 Dynamic type based on checkbox state */}
             <input
               type={showPassword ? "text" : "password"}
               required
@@ -171,7 +169,6 @@ export default function RoleAuth() {
               className="w-full p-3.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-800 font-medium"
             />
 
-            {/* 👀 Clean Checkbox UI */}
             <div className="mt-3 flex items-center gap-2 px-1">
               <input
                 type="checkbox"
@@ -202,7 +199,7 @@ export default function RoleAuth() {
           </button>
         </form>
 
-        {/* 🔒 SECURITY FIX: Hide the Sign Up toggle completely if they are not a parent */}
+        {/* 🔒 SECURITY FIX: Hide the Sign Up toggle completely if they are not allowed */}
         {allowSignUp && (
           <div className="mt-6 text-center text-xs font-medium text-slate-500">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
@@ -212,7 +209,7 @@ export default function RoleAuth() {
                 setIsLogin(!isLogin);
                 setSuccessMessage("");
                 setErrorMessage("");
-                setShowPassword(false); // Reset password visibility on toggle
+                setShowPassword(false);
               }}
               className="font-bold text-[#0b132b] hover:underline ml-1"
             >
